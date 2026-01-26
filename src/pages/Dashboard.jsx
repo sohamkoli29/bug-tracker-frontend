@@ -18,11 +18,11 @@ function Dashboard() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-xl">
-                <Bug className="w-6 h-6 text-white" />
-              </div>
+           <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-xl">
+  <img src="/logo.svg" alt="Main Logo" className="w-6 h-6" />
+</div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                BugTracker
+                BugPilot
               </h1>
             </div>
 
