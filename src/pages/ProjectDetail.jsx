@@ -20,6 +20,9 @@ import TicketContext from '../context/TicketContext';
 import AuthContext from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import CreateTicketModal from '../components/CreateTicketModal';
+import TicketFilters from '../components/TicketFilters';
+import TicketDetailModal from '../components/TicketDetailModal';
+
 
 function ProjectDetail() {
   const { id } = useParams();
@@ -46,7 +49,54 @@ const [projectTickets, setProjectTickets] = useState([]);
 const [ticketLoading, setTicketLoading] = useState(false);
 
 const { tickets, getTickets } = useContext(TicketContext);
+const [filters, setFilters] = useState({
+  search: '',
+  status: 'all',
+  priority: 'all',
+  type: 'all',
+  assignee: 'all',
+});
+const [selectedTicket, setSelectedTicket] = useState(null);
 
+// Filter tickets based on active filters
+const filteredTickets = projectTickets.filter((ticket) => {
+  // Search filter
+  if (
+    filters.search &&
+    !ticket.title.toLowerCase().includes(filters.search.toLowerCase()) &&
+    !ticket.description.toLowerCase().includes(filters.search.toLowerCase()) &&
+    !ticket.ticketKey.toLowerCase().includes(filters.search.toLowerCase())
+  ) {
+    return false;
+  }
+
+  // Status filter
+  if (filters.status !== 'all' && ticket.status !== filters.status) {
+    return false;
+  }
+
+  // Priority filter
+  if (filters.priority !== 'all' && ticket.priority !== filters.priority) {
+    return false;
+  }
+
+  // Type filter
+  if (filters.type !== 'all' && ticket.type !== filters.type) {
+    return false;
+  }
+
+  // Assignee filter
+  if (filters.assignee !== 'all') {
+    if (filters.assignee === 'unassigned' && ticket.assignee) {
+      return false;
+    }
+    if (filters.assignee !== 'unassigned' && ticket.assignee?._id !== filters.assignee) {
+      return false;
+    }
+  }
+
+  return true;
+});
   useEffect(() => {
     getProject(id);
   }, [id]);
@@ -421,113 +471,191 @@ useEffect(() => {
     </div>
   </div>
 
-  {/* Tickets List */}
-  <div className="lg:col-span-2">
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <div className="flex items-center justify-between mb-6">
+{/* Tickets List */}
+<div className="lg:col-span-2">
+  {/* Filters */}
+  <TicketFilters
+    filters={filters}
+    setFilters={setFilters}
+    teamMembers={currentProject?.teamMembers}
+  />
+
+  <div className="bg-white rounded-2xl shadow-xl p-6">
+    <div className="flex items-center justify-between mb-6">
+      <div>
         <h3 className="text-lg font-bold text-slate-800">Issues</h3>
-        <button
-          onClick={() => setShowCreateTicketModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl font-semibold hover:shadow-lg transition-all text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          New Issue
-        </button>
+        <p className="text-sm text-slate-600">
+          Showing {filteredTickets.length} of {projectTickets.length} issues
+        </p>
       </div>
 
-      {ticketLoading ? (
-        <div className="text-center py-8">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p className="text-sm text-slate-600">Loading issues...</p>
-        </div>
-      ) : projectTickets.length === 0 ? (
-        <div className="text-center py-12">
-          <Bug className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h4 className="text-lg font-bold text-slate-800 mb-2">No issues yet</h4>
-          <p className="text-slate-600 mb-6">Create your first issue to get started</p>
+      <button
+        onClick={() => setShowCreateTicketModal(true)}
+        className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl font-semibold hover:shadow-lg transition-all text-sm"
+      >
+        <Plus className="w-4 h-4" />
+        New Issue
+      </button>
+    </div>
+
+    {ticketLoading ? (
+      <div className="text-center py-8">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+        <p className="text-sm text-slate-600">Loading issues...</p>
+      </div>
+    ) : filteredTickets.length === 0 ? (
+      <div className="text-center py-12">
+        <Bug className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+
+        <h4 className="text-lg font-bold text-slate-800 mb-2">
+          {projectTickets.length === 0
+            ? 'No issues yet'
+            : 'No matching issues'}
+        </h4>
+
+        <p className="text-slate-600 mb-6">
+          {projectTickets.length === 0
+            ? 'Create your first issue to get started'
+            : 'Try adjusting your filters'}
+        </p>
+
+        {projectTickets.length === 0 && (
           <button
             onClick={() => setShowCreateTicketModal(true)}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             Create Issue
           </button>
-        </div>
-      ) : (
-        <div className="space-y-3 max-h-[600px] overflow-y-auto">
-          {projectTickets.map((ticket) => (
-            <div
-              key={ticket._id}
-              className="p-4 border border-slate-200 rounded-xl hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span 
-                      className="text-xs font-semibold px-2 py-1 rounded-md"
-                      style={{
-                        backgroundColor: `${currentProject.color}20`,
-                        color: currentProject.color,
-                      }}
-                    >
-                      {ticket.ticketKey}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-md font-medium ${
-                      ticket.priority === 'critical' ? 'bg-red-100 text-red-700' :
-                      ticket.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                      ticket.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {ticket.priority}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-md font-medium ${
-                      ticket.type === 'bug' ? 'bg-red-100 text-red-700' :
-                      ticket.type === 'feature' ? 'bg-blue-100 text-blue-700' :
-                      ticket.type === 'improvement' ? 'bg-purple-100 text-purple-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                      {ticket.type === 'bug' ? '🐛' :
-                       ticket.type === 'feature' ? '✨' :
-                       ticket.type === 'improvement' ? '🚀' : '📋'} {ticket.type}
-                    </span>
-                  </div>
-                  <h4 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                    {ticket.title}
-                  </h4>
-                  <p className="text-sm text-slate-600 mt-1 line-clamp-2">
-                    {ticket.description}
-                  </p>
-                </div>
-              </div>
+        )}
+      </div>
+    ) : (
+      <div className="space-y-3 max-h-[600px] overflow-y-auto">
+        {filteredTickets.map((ticket) => (
+          <div
+            key={ticket._id}
+            onClick={() => setSelectedTicket(ticket)}
+            className="p-4 border border-slate-200 rounded-xl hover:shadow-md transition-all cursor-pointer group"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className="text-xs font-semibold px-2 py-1 rounded-md"
+                    style={{
+                      backgroundColor: `${currentProject.color}20`,
+                      color: currentProject.color,
+                    }}
+                  >
+                    {ticket.ticketKey}
+                  </span>
 
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-3">
-                  {ticket.assignee ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
-                        {getInitials(ticket.assignee.name)}
-                      </div>
-                      <span className="text-xs text-slate-600">{ticket.assignee.name}</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-slate-400">Unassigned</span>
-                  )}
+                  <span
+                    className={`text-xs px-2 py-1 rounded-md font-medium ${
+                      ticket.priority === 'critical'
+                        ? 'bg-red-100 text-red-700'
+                        : ticket.priority === 'high'
+                        ? 'bg-orange-100 text-orange-700'
+                        : ticket.priority === 'medium'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {ticket.priority}
+                  </span>
+
+                  <span
+                    className={`text-xs px-2 py-1 rounded-md font-medium ${
+                      ticket.type === 'bug'
+                        ? 'bg-red-100 text-red-700'
+                        : ticket.type === 'feature'
+                        ? 'bg-blue-100 text-blue-700'
+                        : ticket.type === 'improvement'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-green-100 text-green-700'
+                    }`}
+                  >
+                    {ticket.type === 'bug'
+                      ? '🐛'
+                      : ticket.type === 'feature'
+                      ? '✨'
+                      : ticket.type === 'improvement'
+                      ? '🚀'
+                      : '📋'}{' '}
+                    {ticket.type}
+                  </span>
                 </div>
 
-                <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                  ticket.status === 'done' ? 'bg-green-100 text-green-700' :
-                  ticket.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                  'bg-slate-100 text-slate-700'
-                }`}>
-                  {ticket.status === 'todo' ? 'To Do' :
-                   ticket.status === 'in-progress' ? 'In Progress' : 'Done'}
-                </span>
+                <h4 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                  {ticket.title}
+                </h4>
+
+                <p className="text-sm text-slate-600 mt-1 line-clamp-2">
+                  {ticket.description}
+                </p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center gap-3">
+                {ticket.assignee ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
+                      {getInitials(ticket.assignee.name)}
+                    </div>
+                    <span className="text-xs text-slate-600">
+                      {ticket.assignee.name}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-slate-400">Unassigned</span>
+                )}
+              </div>
+
+              <span
+                className={`text-xs px-3 py-1 rounded-full font-medium ${
+                  ticket.status === 'done'
+                    ? 'bg-green-100 text-green-700'
+                    : ticket.status === 'in-progress'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {ticket.status === 'todo'
+                  ? 'To Do'
+                  : ticket.status === 'in-progress'
+                  ? 'In Progress'
+                  : 'Done'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
+</div>
+
+{/* Ticket Detail Modal */}
+{selectedTicket && (
+  <TicketDetailModal
+    ticket={selectedTicket}
+    onClose={() => setSelectedTicket(null)}
+    onUpdate={(updatedTicket) => {
+      if (updatedTicket) {
+        setProjectTickets(
+          projectTickets.map((t) =>
+            t._id === updatedTicket._id ? updatedTicket : t
+          )
+        );
+        setSelectedTicket(updatedTicket);
+      } else {
+        // Ticket was deleted, reload tickets
+        loadTickets();
+        setSelectedTicket(null);
+      }
+    }}
+  />
+)}
+
 </div>
       </main>
 
