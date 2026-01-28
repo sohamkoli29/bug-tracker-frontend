@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Plus,
   LogOut,
+  Layers ,
 } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
 import ProjectContext from '../context/ProjectContext';
@@ -27,12 +28,12 @@ function Sidebar() {
   };
 
   const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/projects', icon: FolderKanban, label: 'Projects' },
-    { path: '/all-issues', icon: Bug, label: 'All Issues' },
-    { path: '/team', icon: Users, label: 'Team' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
-  ];
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/projects', icon: FolderKanban, label: 'Projects' },
+  { path: '/all-issues', icon: Bug, label: 'All Issues' },
+  { path: '/team', icon: Users, label: 'Team' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
+];
 
   const isActive = (path) => {
     if (path === '/dashboard') return location.pathname === path;

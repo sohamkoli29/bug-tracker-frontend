@@ -9,7 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import PrivateRoute from './components/PrivateRoute';
-
+import KanbanView from './pages/KanbanView';
 function App() {
   return (
     <AuthProvider>
@@ -44,6 +44,14 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route
+  path="/projects/:id/kanban"
+  element={
+    <PrivateRoute>
+      <KanbanView />
+    </PrivateRoute>
+  }
+/>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Router>
