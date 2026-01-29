@@ -21,7 +21,7 @@ import TicketContext from "../context/TicketContext";
 import AuthContext from "../context/AuthContext";
 import DashboardLayout from "../components/DashboardLayout";
 import CreateTicketModal from "../components/CreateTicketModal";
-import TicketFilters from "../components/TicketFilters";
+
 import TicketDetailModal from "../components/TicketDetailModal";
 import KanbanBoard from "../components/KanbanBoard";
 import AdvancedTicketFilters from "../components/AdvancedTicketFilters";
@@ -70,7 +70,7 @@ function ProjectDetail() {
   const [ticketLoading, setTicketLoading] = useState(false);
 
   const { tickets, getTickets } = useContext(TicketContext);
-  const [viewMode, setViewMode] = useState("list"); // 'list' or 'kanban'
+  const [viewMode, setViewMode] = useState("kanban"); // 'list' or 'kanban'
 
   useEffect(() => {
     getProject(id);

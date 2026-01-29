@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from "react";
 import {
   X,
   Edit,
@@ -10,42 +10,45 @@ import {
   AlertCircle,
   CheckCircle2,
   Save,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import TicketContext from '../context/TicketContext';
-import ProjectContext from '../context/ProjectContext';
-import AuthContext from '../context/AuthContext';
-import Comments from './Comments';
+} from "lucide-react";
+import toast from "react-hot-toast";
+import TicketContext from "../context/TicketContext";
+import ProjectContext from "../context/ProjectContext";
+import AuthContext from "../context/AuthContext";
+import Comments from "./Comments";
+import ActivityLog from "./ActivityLog";
+import DuplicateTicketButton from "./DuplicateTicketButton";
+
 const TYPES = [
-  { value: 'bug', label: '🐛 Bug', color: 'red' },
-  { value: 'feature', label: '✨ Feature', color: 'blue' },
-  { value: 'improvement', label: '🚀 Improvement', color: 'purple' },
-  { value: 'task', label: '📋 Task', color: 'green' },
+  { value: "bug", label: "🐛 Bug", color: "red" },
+  { value: "feature", label: "✨ Feature", color: "blue" },
+  { value: "improvement", label: "🚀 Improvement", color: "purple" },
+  { value: "task", label: "📋 Task", color: "green" },
 ];
 
 const PRIORITIES = [
-  { value: 'low', label: 'Low', color: 'slate' },
-  { value: 'medium', label: 'Medium', color: 'yellow' },
-  { value: 'high', label: 'High', color: 'orange' },
-  { value: 'critical', label: 'Critical', color: 'red' },
+  { value: "low", label: "Low", color: "slate" },
+  { value: "medium", label: "Medium", color: "yellow" },
+  { value: "high", label: "High", color: "orange" },
+  { value: "critical", label: "Critical", color: "red" },
 ];
 
 const STATUSES = [
-  { value: 'todo', label: 'To Do', icon: AlertCircle, color: 'slate' },
-  { value: 'in-progress', label: 'In Progress', icon: Clock, color: 'blue' },
-  { value: 'done', label: 'Done', icon: CheckCircle2, color: 'green' },
+  { value: "todo", label: "To Do", icon: AlertCircle, color: "slate" },
+  { value: "in-progress", label: "In Progress", icon: Clock, color: "blue" },
+  { value: "done", label: "Done", icon: CheckCircle2, color: "green" },
 ];
 
 function TicketDetailModal({ ticket, onClose, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    type: '',
-    priority: '',
-    status: '',
-    assignee: '',
-    dueDate: '',
+    title: "",
+    description: "",
+    type: "",
+    priority: "",
+    status: "",
+    assignee: "",
+    dueDate: "",
   });
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -62,8 +65,8 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
         type: ticket.type,
         priority: ticket.priority,
         status: ticket.status,
-        assignee: ticket.assignee?._id || '',
-        dueDate: ticket.dueDate ? ticket.dueDate.split('T')[0] : '',
+        assignee: ticket.assignee?._id || "",
+        dueDate: ticket.dueDate ? ticket.dueDate.split("T")[0] : "",
       });
     }
   }, [ticket]);
@@ -79,7 +82,7 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
     const result = await updateTicket(ticket._id, formData);
 
     if (result.success) {
-      toast.success('Ticket updated successfully!');
+      toast.success("Ticket updated successfully!");
       setIsEditing(false);
       if (onUpdate) onUpdate(result.data);
     } else {
@@ -95,7 +98,7 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
     const result = await deleteTicket(ticket._id);
 
     if (result.success) {
-      toast.success('Ticket deleted successfully!');
+      toast.success("Ticket deleted successfully!");
       onClose();
       if (onUpdate) onUpdate();
     } else {
@@ -109,7 +112,7 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
     const result = await updateTicket(ticket._id, { status: newStatus });
 
     if (result.success) {
-      toast.success('Status updated!');
+      toast.success("Status updated!");
       if (onUpdate) onUpdate(result.data);
     } else {
       toast.error(result.message);
@@ -118,21 +121,22 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
 
   const getInitials = (name) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase();
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
-  const canEdit = ticket?.reporter?._id === user?._id || currentProject?.owner === user?._id;
+  const canEdit =
+    ticket?.reporter?._id === user?._id || currentProject?.owner === user?._id;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -150,13 +154,17 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
               {ticket.ticketKey}
             </span>
             <h2 className="text-xl font-bold text-slate-800">
-              {isEditing ? 'Edit Issue' : ticket.title}
+              {isEditing ? "Edit Issue" : ticket.title}
             </h2>
           </div>
 
           <div className="flex items-center gap-2">
             {canEdit && !isEditing && (
               <>
+                <DuplicateTicketButton
+                  ticket={ticket}
+                  onSuccess={() => onUpdate()}
+                />
                 <button
                   onClick={() => setIsEditing(true)}
                   className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
@@ -218,7 +226,9 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
             {/* Type, Priority, Status */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Type</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Type
+                </label>
                 <select
                   name="type"
                   value={formData.type}
@@ -252,7 +262,9 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Status
+                </label>
                 <select
                   name="status"
                   value={formData.status}
@@ -337,26 +349,26 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
             <div className="flex flex-wrap gap-2">
               <span
                 className={`text-xs px-3 py-1 rounded-md font-medium ${
-                  ticket.type === 'bug'
-                    ? 'bg-red-100 text-red-700'
-                    : ticket.type === 'feature'
-                    ? 'bg-blue-100 text-blue-700'
-                    : ticket.type === 'improvement'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-green-100 text-green-700'
+                  ticket.type === "bug"
+                    ? "bg-red-100 text-red-700"
+                    : ticket.type === "feature"
+                      ? "bg-blue-100 text-blue-700"
+                      : ticket.type === "improvement"
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-green-100 text-green-700"
                 }`}
               >
                 {TYPES.find((t) => t.value === ticket.type)?.label}
               </span>
               <span
                 className={`text-xs px-3 py-1 rounded-md font-medium ${
-                  ticket.priority === 'critical'
-                    ? 'bg-red-100 text-red-700'
-                    : ticket.priority === 'high'
-                    ? 'bg-orange-100 text-orange-700'
-                    : ticket.priority === 'medium'
-                    ? 'bg-yellow-100 text-yellow-700'
-                    : 'bg-slate-100 text-slate-700'
+                  ticket.priority === "critical"
+                    ? "bg-red-100 text-red-700"
+                    : ticket.priority === "high"
+                      ? "bg-orange-100 text-orange-700"
+                      : ticket.priority === "medium"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-slate-100 text-slate-700"
                 }`}
               >
                 Priority: {ticket.priority}
@@ -365,7 +377,9 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
 
             {/* Description */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-2">Description</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-2">
+                Description
+              </h3>
               <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">
                 {ticket.description}
               </p>
@@ -373,7 +387,9 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
 
             {/* Quick Status Update */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Quick Status Update</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                Quick Status Update
+              </h3>
               <div className="flex gap-2">
                 {STATUSES.map((status) => {
                   const Icon = status.icon;
@@ -381,16 +397,18 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                   return (
                     <button
                       key={status.value}
-                      onClick={() => !isActive && handleQuickStatusUpdate(status.value)}
+                      onClick={() =>
+                        !isActive && handleQuickStatusUpdate(status.value)
+                      }
                       disabled={isActive}
                       className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all ${
                         isActive
-                          ? status.value === 'done'
-                            ? 'bg-green-100 text-green-700 ring-2 ring-green-500'
-                            : status.value === 'in-progress'
-                            ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500'
-                            : 'bg-slate-100 text-slate-700 ring-2 ring-slate-500'
-                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          ? status.value === "done"
+                            ? "bg-green-100 text-green-700 ring-2 ring-green-500"
+                            : status.value === "in-progress"
+                              ? "bg-blue-100 text-blue-700 ring-2 ring-blue-500"
+                              : "bg-slate-100 text-slate-700 ring-2 ring-slate-500"
+                          : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -415,8 +433,12 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                       {getInitials(ticket.assignee.name)}
                     </div>
                     <div>
-                      <p className="font-medium text-slate-800">{ticket.assignee.name}</p>
-                      <p className="text-xs text-slate-500">{ticket.assignee.email}</p>
+                      <p className="font-medium text-slate-800">
+                        {ticket.assignee.name}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {ticket.assignee.email}
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -435,8 +457,12 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                     {getInitials(ticket.reporter.name)}
                   </div>
                   <div>
-                    <p className="font-medium text-slate-800">{ticket.reporter.name}</p>
-                    <p className="text-xs text-slate-500">{ticket.reporter.email}</p>
+                    <p className="font-medium text-slate-800">
+                      {ticket.reporter.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {ticket.reporter.email}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -448,7 +474,7 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                   <span className="text-sm font-semibold">Due Date</span>
                 </div>
                 <p className="font-medium text-slate-800">
-                  {ticket.dueDate ? formatDate(ticket.dueDate) : 'No due date'}
+                  {ticket.dueDate ? formatDate(ticket.dueDate) : "No due date"}
                 </p>
               </div>
 
@@ -458,7 +484,9 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                   <Clock className="w-4 h-4" />
                   <span className="text-sm font-semibold">Created</span>
                 </div>
-                <p className="font-medium text-slate-800">{formatDate(ticket.createdAt)}</p>
+                <p className="font-medium text-slate-800">
+                  {formatDate(ticket.createdAt)}
+                </p>
               </div>
             </div>
 
@@ -483,9 +511,11 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
             )}
 
             {/* Comments Section */}
-<div className="border-t border-slate-200 pt-6">
-  <Comments ticketId={ticket._id} />
-</div>
+            <div className="border-t border-slate-200 pt-6">
+              <Comments ticketId={ticket._id} />
+            </div>
+            {/* Activity Log Section */}
+            <ActivityLog ticketId={ticket._id} />
           </div>
         )}
 
@@ -496,9 +526,12 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
                 <Trash2 className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Issue?</h3>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">
+                Delete Issue?
+              </h3>
               <p className="text-slate-600 mb-6">
-                Are you sure you want to delete this issue? This action cannot be undone.
+                Are you sure you want to delete this issue? This action cannot
+                be undone.
               </p>
               <div className="flex gap-3">
                 <button
@@ -512,7 +545,7 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                   disabled={loading}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50"
                 >
-                  {loading ? 'Deleting...' : 'Delete'}
+                  {loading ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>
