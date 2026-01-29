@@ -1,5 +1,5 @@
-import { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Users,
   Calendar,
@@ -14,21 +14,30 @@ import {
   AlertCircle,
   LayoutList,
   LayoutGrid,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import ProjectContext from '../context/ProjectContext';
-import TicketContext from '../context/TicketContext';
-import AuthContext from '../context/AuthContext';
-import DashboardLayout from '../components/DashboardLayout';
-import CreateTicketModal from '../components/CreateTicketModal';
-import TicketFilters from '../components/TicketFilters';
-import TicketDetailModal from '../components/TicketDetailModal';
-import KanbanBoard from '../components/KanbanBoard';
+} from "lucide-react";
+import toast from "react-hot-toast";
+import ProjectContext from "../context/ProjectContext";
+import TicketContext from "../context/TicketContext";
+import AuthContext from "../context/AuthContext";
+import DashboardLayout from "../components/DashboardLayout";
+import CreateTicketModal from "../components/CreateTicketModal";
+import TicketFilters from "../components/TicketFilters";
+import TicketDetailModal from "../components/TicketDetailModal";
+import KanbanBoard from "../components/KanbanBoard";
+import AdvancedTicketFilters from "../components/AdvancedTicketFilters";
+import FilterStats from "../components/FilterStats";
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentProject, getProject, updateProject, deleteProject, addTeamMember, removeTeamMember, loading } =
-    useContext(ProjectContext);
+  const {
+    currentProject,
+    getProject,
+    updateProject,
+    deleteProject,
+    addTeamMember,
+    removeTeamMember,
+    loading,
+  } = useContext(ProjectContext);
   const { user } = useContext(AuthContext);
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -36,30 +45,32 @@ function ProjectDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    title: '',
-    description: '',
-    status: '',
-    color: '',
-    icon: '',
+    title: "",
+    description: "",
+    status: "",
+    color: "",
+    icon: "",
   });
-  const [memberEmail, setMemberEmail] = useState('');
-  const [memberRole, setMemberRole] = useState('developer');
+  const [memberEmail, setMemberEmail] = useState("");
+  const [memberRole, setMemberRole] = useState("developer");
   const [actionLoading, setActionLoading] = useState(false);
 
   // Ticket states
   const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    priority: 'all',
-    type: 'all',
-    assignee: 'all',
+    search: "",
+    status: "all",
+    priority: "all",
+    type: "all",
+    assignee: "all",
+    sortBy: "createdAt",
+    order: "desc",
   });
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [projectTickets, setProjectTickets] = useState([]);
   const [ticketLoading, setTicketLoading] = useState(false);
 
   const { tickets, getTickets } = useContext(TicketContext);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'kanban'
+  const [viewMode, setViewMode] = useState("list"); // 'list' or 'kanban'
 
   useEffect(() => {
     getProject(id);
@@ -97,25 +108,25 @@ function ProjectDetail() {
 
   const getInitials = (name) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase();
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const isOwner = currentProject?.owner?._id === user?._id;
   const userMember = currentProject?.teamMembers?.find(
-    (member) => member.user._id === user?._id
+    (member) => member.user._id === user?._id,
   );
-  const isAdmin = userMember?.role === 'admin' || isOwner;
+  const isAdmin = userMember?.role === "admin" || isOwner;
 
   const handleEditProject = async (e) => {
     e.preventDefault();
@@ -124,7 +135,7 @@ function ProjectDetail() {
     const result = await updateProject(id, editFormData);
 
     if (result.success) {
-      toast.success('Project updated successfully!');
+      toast.success("Project updated successfully!");
       setShowEditModal(false);
     } else {
       toast.error(result.message);
@@ -139,8 +150,8 @@ function ProjectDetail() {
     const result = await deleteProject(id);
 
     if (result.success) {
-      toast.success('Project deleted successfully!');
-      navigate('/projects');
+      toast.success("Project deleted successfully!");
+      navigate("/projects");
     } else {
       toast.error(result.message);
     }
@@ -158,10 +169,10 @@ function ProjectDetail() {
     });
 
     if (result.success) {
-      toast.success('Team member added successfully!');
+      toast.success("Team member added successfully!");
       setShowAddMemberModal(false);
-      setMemberEmail('');
-      setMemberRole('developer');
+      setMemberEmail("");
+      setMemberRole("developer");
     } else {
       toast.error(result.message);
     }
@@ -170,11 +181,11 @@ function ProjectDetail() {
   };
 
   const handleRemoveMember = async (memberId) => {
-    if (window.confirm('Are you sure you want to remove this member?')) {
+    if (window.confirm("Are you sure you want to remove this member?")) {
       const result = await removeTeamMember(id, memberId);
 
       if (result.success) {
-        toast.success('Team member removed successfully!');
+        toast.success("Team member removed successfully!");
       } else {
         toast.error(result.message);
       }
@@ -182,44 +193,67 @@ function ProjectDetail() {
   };
 
   // Filter tickets based on active filters
-  const filteredTickets = projectTickets.filter((ticket) => {
-    // Search filter
-    if (
-      filters.search &&
-      !ticket.title.toLowerCase().includes(filters.search.toLowerCase()) &&
-      !ticket.description.toLowerCase().includes(filters.search.toLowerCase()) &&
-      !ticket.ticketKey.toLowerCase().includes(filters.search.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Status filter
-    if (filters.status !== 'all' && ticket.status !== filters.status) {
-      return false;
-    }
-
-    // Priority filter
-    if (filters.priority !== 'all' && ticket.priority !== filters.priority) {
-      return false;
-    }
-
-    // Type filter
-    if (filters.type !== 'all' && ticket.type !== filters.type) {
-      return false;
-    }
-
-    // Assignee filter
-    if (filters.assignee !== 'all') {
-      if (filters.assignee === 'unassigned' && ticket.assignee) {
+  const filteredTickets = projectTickets
+    .filter((ticket) => {
+      // Search filter
+      if (
+        filters.search &&
+        !ticket.title.toLowerCase().includes(filters.search.toLowerCase()) &&
+        !ticket.description
+          .toLowerCase()
+          .includes(filters.search.toLowerCase()) &&
+        !ticket.ticketKey.toLowerCase().includes(filters.search.toLowerCase())
+      ) {
         return false;
       }
-      if (filters.assignee !== 'unassigned' && ticket.assignee?._id !== filters.assignee) {
+
+      // Status filter
+      if (filters.status !== "all" && ticket.status !== filters.status) {
         return false;
       }
-    }
 
-    return true;
-  });
+      // Priority filter
+      if (filters.priority !== "all" && ticket.priority !== filters.priority) {
+        return false;
+      }
+
+      // Type filter
+      if (filters.type !== "all" && ticket.type !== filters.type) {
+        return false;
+      }
+
+      // Assignee filter
+      if (filters.assignee !== "all") {
+        if (filters.assignee === "unassigned" && ticket.assignee) {
+          return false;
+        }
+        if (
+          filters.assignee !== "unassigned" &&
+          ticket.assignee?._id !== filters.assignee
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      const sortBy = filters.sortBy || "createdAt";
+      const order = filters.order || "desc";
+
+      let comparison = 0;
+
+      if (sortBy === "createdAt" || sortBy === "updatedAt") {
+        comparison = new Date(a[sortBy]) - new Date(b[sortBy]);
+      } else if (sortBy === "priority") {
+        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+      } else if (sortBy === "title") {
+        comparison = a.title.localeCompare(b.title);
+      }
+
+      return order === "desc" ? -comparison : comparison;
+    });
 
   if (loading) {
     return (
@@ -239,9 +273,11 @@ function ProjectDetail() {
       <DashboardLayout>
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Project not found</h2>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+              Project not found
+            </h2>
             <button
-              onClick={() => navigate('/projects')}
+              onClick={() => navigate("/projects")}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Back to Projects
@@ -325,11 +361,11 @@ function ProjectDetail() {
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium ${
-                currentProject.status === 'active'
-                  ? 'bg-green-100 text-green-700'
-                  : currentProject.status === 'on-hold'
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-slate-100 text-slate-700'
+                currentProject.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : currentProject.status === "on-hold"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-slate-100 text-slate-700"
               }`}
             >
               {currentProject.status}
@@ -337,7 +373,6 @@ function ProjectDetail() {
           </div>
         </div>
       </div>
-
       {/* Team Members Section */}
       <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
         <div className="flex items-center justify-between mb-6">
@@ -394,14 +429,15 @@ function ProjectDetail() {
           ))}
         </div>
       </div>
-
       {/* Project Stats and Tickets Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Stats */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Statistics</h3>
-            
+            <h3 className="text-lg font-bold text-slate-800 mb-4">
+              Statistics
+            </h3>
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
                 <div className="flex items-center gap-3">
@@ -425,7 +461,10 @@ function ProjectDetail() {
                   <div>
                     <p className="text-sm text-slate-600">In Progress</p>
                     <p className="text-2xl font-bold text-slate-800">
-                      {projectTickets.filter(t => t.status === 'in-progress').length}
+                      {
+                        projectTickets.filter((t) => t.status === "in-progress")
+                          .length
+                      }
                     </p>
                   </div>
                 </div>
@@ -439,7 +478,7 @@ function ProjectDetail() {
                   <div>
                     <p className="text-sm text-slate-600">Completed</p>
                     <p className="text-2xl font-bold text-slate-800">
-                      {projectTickets.filter(t => t.status === 'done').length}
+                      {projectTickets.filter((t) => t.status === "done").length}
                     </p>
                   </div>
                 </div>
@@ -453,7 +492,12 @@ function ProjectDetail() {
                   <div>
                     <p className="text-sm text-slate-600">High Priority</p>
                     <p className="text-2xl font-bold text-slate-800">
-                      {projectTickets.filter(t => t.priority === 'high' || t.priority === 'critical').length}
+                      {
+                        projectTickets.filter(
+                          (t) =>
+                            t.priority === "high" || t.priority === "critical",
+                        ).length
+                      }
                     </p>
                   </div>
                 </div>
@@ -461,107 +505,116 @@ function ProjectDetail() {
             </div>
           </div>
         </div>
-
+        {/* Filter Statistics */}
+        {viewMode === "list" && filteredTickets.length > 0 && (
+          <FilterStats
+            tickets={projectTickets}
+            filteredTickets={filteredTickets}
+          />
+        )}
         {/* Tickets List */}
         <div className="lg:col-span-2">
           {/* Filters */}
-          <TicketFilters
+          <AdvancedTicketFilters
             filters={filters}
             setFilters={setFilters}
             teamMembers={currentProject?.teamMembers}
+            userId={user?._id}
           />
 
           <div className="bg-white rounded-2xl shadow-xl p-6">
-           <div className="flex items-center justify-between mb-6">
-  <div>
-    <h3 className="text-lg font-bold text-slate-800">Issues</h3>
-    <p className="text-sm text-slate-600">
-      Showing {filteredTickets.length} of {projectTickets.length} issues
-    </p>
-  </div>
-  <div className="flex items-center gap-2">
-    {/* View Mode Toggle */}
-    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
-      <button
-        onClick={() => setViewMode('list')}
-        className={`p-2 rounded-md transition-all ${
-          viewMode === 'list'
-            ? 'bg-white text-blue-600 shadow-sm'
-            : 'text-slate-600 hover:text-slate-800'
-        }`}
-        title="List View"
-      >
-        <LayoutList className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => setViewMode('kanban')}
-        className={`p-2 rounded-md transition-all ${
-          viewMode === 'kanban'
-            ? 'bg-white text-blue-600 shadow-sm'
-            : 'text-slate-600 hover:text-slate-800'
-        }`}
-        title="Kanban View"
-      >
-        <LayoutGrid className="w-4 h-4" />
-      </button>
-    </div>
-    <button
-      onClick={() => setShowCreateTicketModal(true)}
-      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl font-semibold hover:shadow-lg transition-all text-sm"
-    >
-      <Plus className="w-4 h-4" />
-      New Issue
-    </button>
-  </div>
-</div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Issues</h3>
+                <p className="text-sm text-slate-600">
+                  Showing {filteredTickets.length} of {projectTickets.length}{" "}
+                  issues
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 rounded-md transition-all ${
+                      viewMode === "list"
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-slate-600 hover:text-slate-800"
+                    }`}
+                    title="List View"
+                  >
+                    <LayoutList className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("kanban")}
+                    className={`p-2 rounded-md transition-all ${
+                      viewMode === "kanban"
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-slate-600 hover:text-slate-800"
+                    }`}
+                    title="Kanban View"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowCreateTicketModal(true)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-xl font-semibold hover:shadow-lg transition-all text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Issue
+                </button>
+              </div>
+            </div>
 
-           {viewMode === 'list' ? (
-  // Existing ticket list code
-  ticketLoading ? (
-    <div className="text-center py-8">
-      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-      <p className="text-sm text-slate-600">Loading issues...</p>
-    </div>
-  ) : filteredTickets.length === 0 ? (
-    <div className="text-center py-12">
-      <Bug className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-      <h4 className="text-lg font-bold text-slate-800 mb-2">
-        {projectTickets.length === 0 ? 'No issues yet' : 'No matching issues'}
-      </h4>
-      <p className="text-slate-600 mb-6">
-        {projectTickets.length === 0
-          ? 'Create your first issue to get started'
-          : 'Try adjusting your filters'}
-      </p>
-      {projectTickets.length === 0 && (
-        <button
-          onClick={() => setShowCreateTicketModal(true)}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-        >
-          Create Issue
-        </button>
-      )}
-    </div>
-  ) : (
-    <div className="space-y-3 max-h-[600px] overflow-y-auto">
-      {/* Your existing ticket cards code */}
-    </div>
-  )
-) : (
-  // Kanban View
-  <div className="mt-6">
-    <KanbanBoard
-      projectId={id}
-      tickets={filteredTickets}
-      onTicketClick={(ticket) => setSelectedTicket(ticket)}
-      onCreateTicket={() => setShowCreateTicketModal(true)}
-    />
-  </div>
-)}
+            {viewMode === "list" ? (
+              // Existing ticket list code
+              ticketLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-sm text-slate-600">Loading issues...</p>
+                </div>
+              ) : filteredTickets.length === 0 ? (
+                <div className="text-center py-12">
+                  <Bug className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h4 className="text-lg font-bold text-slate-800 mb-2">
+                    {projectTickets.length === 0
+                      ? "No issues yet"
+                      : "No matching issues"}
+                  </h4>
+                  <p className="text-slate-600 mb-6">
+                    {projectTickets.length === 0
+                      ? "Create your first issue to get started"
+                      : "Try adjusting your filters"}
+                  </p>
+                  {projectTickets.length === 0 && (
+                    <button
+                      onClick={() => setShowCreateTicketModal(true)}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                    >
+                      Create Issue
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {/* Your existing ticket cards code */}
+                </div>
+              )
+            ) : (
+              // Kanban View
+              <div className="mt-6">
+                <KanbanBoard
+                  projectId={id}
+                  tickets={filteredTickets}
+                  onTicketClick={(ticket) => setSelectedTicket(ticket)}
+                  onCreateTicket={() => setShowCreateTicketModal(true)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
-
       {/* Create Ticket Modal */}
       {showCreateTicketModal && (
         <CreateTicketModal
@@ -572,7 +625,6 @@ function ProjectDetail() {
           }}
         />
       )}
-
       {/* Ticket Detail Modal */}
       {selectedTicket && (
         <TicketDetailModal
@@ -581,7 +633,9 @@ function ProjectDetail() {
           onUpdate={(updatedTicket) => {
             if (updatedTicket) {
               setProjectTickets(
-                projectTickets.map((t) => (t._id === updatedTicket._id ? updatedTicket : t))
+                projectTickets.map((t) =>
+                  t._id === updatedTicket._id ? updatedTicket : t,
+                ),
               );
               setSelectedTicket(updatedTicket);
             } else {
@@ -592,13 +646,14 @@ function ProjectDetail() {
           }}
         />
       )}
-
       {/* Edit Project Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-2xl font-bold text-slate-800">Edit Project</h2>
+              <h2 className="text-2xl font-bold text-slate-800">
+                Edit Project
+              </h2>
               <button
                 onClick={() => setShowEditModal(false)}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -630,7 +685,10 @@ function ProjectDetail() {
                 <textarea
                   value={editFormData.description}
                   onChange={(e) =>
-                    setEditFormData({ ...editFormData, description: e.target.value })
+                    setEditFormData({
+                      ...editFormData,
+                      description: e.target.value,
+                    })
                   }
                   rows={3}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
@@ -668,20 +726,21 @@ function ProjectDetail() {
                   disabled={actionLoading}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {actionLoading ? 'Saving...' : 'Save Changes'}
+                  {actionLoading ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {/* Add Member Modal */}
       {showAddMemberModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-2xl font-bold text-slate-800">Add Team Member</h2>
+              <h2 className="text-2xl font-bold text-slate-800">
+                Add Team Member
+              </h2>
               <button
                 onClick={() => setShowAddMemberModal(false)}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -718,7 +777,8 @@ function ProjectDetail() {
                   <option value="developer">Developer</option>
                   <option value="admin">Admin</option>
                 </select>
-              </div><div className="flex gap-3 pt-4">
+              </div>
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddMemberModal(false)}
@@ -731,46 +791,49 @@ function ProjectDetail() {
                   disabled={actionLoading}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {actionLoading ? 'Adding...' : 'Add Member'}
+                  {actionLoading ? "Adding..." : "Add Member"}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}  {/* Delete Confirmation Modal */}
-  {showDeleteModal && (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="p-6">
-          <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
-            <Trash2 className="w-6 h-6 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Delete Project?</h2>
-          <p className="text-slate-600 mb-6">
-            Are you sure you want to delete this project? This action cannot be undone and
-            will delete all associated issues and data.
-          </p>
+      )}{" "}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                Delete Project?
+              </h2>
+              <p className="text-slate-600 mb-6">
+                Are you sure you want to delete this project? This action cannot
+                be undone and will delete all associated issues and data.
+              </p>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowDeleteModal(false)}
-              className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDeleteProject}
-              disabled={actionLoading}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
-            >
-              {actionLoading ? 'Deleting...' : 'Delete Project'}
-            </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteProject}
+                  disabled={actionLoading}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
+                >
+                  {actionLoading ? "Deleting..." : "Delete Project"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  )}
-</DashboardLayout>
-);
+      )}
+    </DashboardLayout>
+  );
 }
 export default ProjectDetail;
