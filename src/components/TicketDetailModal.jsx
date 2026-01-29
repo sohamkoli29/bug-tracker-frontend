@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import TicketContext from '../context/TicketContext';
 import ProjectContext from '../context/ProjectContext';
 import AuthContext from '../context/AuthContext';
-
+import Comments from './Comments';
 const TYPES = [
   { value: 'bug', label: '🐛 Bug', color: 'red' },
   { value: 'feature', label: '✨ Feature', color: 'blue' },
@@ -481,6 +481,11 @@ function TicketDetailModal({ ticket, onClose, onUpdate }) {
                 </div>
               </div>
             )}
+
+            {/* Comments Section */}
+<div className="border-t border-slate-200 pt-6">
+  <Comments ticketId={ticket._id} />
+</div>
           </div>
         )}
 
