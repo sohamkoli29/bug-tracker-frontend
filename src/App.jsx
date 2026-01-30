@@ -10,6 +10,9 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import KanbanView from './pages/KanbanView';
+import AllIssues from './pages/AllIssues';
+import Team from './pages/Team';
+import Settings from './pages/Settings';
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
@@ -52,6 +55,30 @@ function App() {
                   element={
                     <PrivateRoute>
                       <KanbanView />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/all-issues"
+                  element={
+                    <PrivateRoute>
+                      <AllIssues />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/team"
+                  element={
+                    <PrivateRoute>
+                      <Team />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <PrivateRoute>
+                      <Settings />
                     </PrivateRoute>
                   }
                 />
