@@ -4,13 +4,11 @@ import {
   LayoutDashboard,
   FolderKanban,
   Bug,
-  Users,
   Settings,
   ChevronLeft,
   ChevronRight,
   Plus,
   LogOut,
-  Layers ,
 } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
 import ProjectContext from '../context/ProjectContext';
@@ -28,12 +26,11 @@ function Sidebar() {
   };
 
   const navItems = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/projects', icon: FolderKanban, label: 'Projects' },
-  { path: '/all-issues', icon: Bug, label: 'All Issues' },
-  { path: '/team', icon: Users, label: 'Team' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
-];
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/projects', icon: FolderKanban, label: 'Projects' },
+    { path: '/all-issues', icon: Bug, label: 'All Issues' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
+  ];
 
   const isActive = (path) => {
     if (path === '/dashboard') return location.pathname === path;
@@ -46,14 +43,14 @@ function Sidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - Fixed with h-screen */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 fixed left-0 top-0 h-screen z-50 ${
           collapsed ? 'w-20' : 'w-64'
         }`}
       >
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 flex-shrink-0">
           {!collapsed && (
             <Link to="/dashboard" className="flex items-center gap-2">
               <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
@@ -99,7 +96,7 @@ function Sidebar() {
 
         {/* Recent Projects */}
         {!collapsed && projects.length > 0 && (
-          <div className="p-3 border-t border-slate-200">
+          <div className="p-3 border-t border-slate-200 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-slate-600 uppercase">Recent Projects</p>
               <Link
@@ -136,7 +133,7 @@ function Sidebar() {
         )}
 
         {/* User Profile */}
-        <div className="p-3 border-t border-slate-200">
+        <div className="p-3 border-t border-slate-200 flex-shrink-0">
           {collapsed ? (
             <div className="flex justify-center">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
