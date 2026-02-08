@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { TicketProvider } from './context/TicketContext';
 import { CommentProvider } from './context/CommentContext';
-import { NotificationProvider } from './context/Notificationcontext';
+import { NotificationProvider } from './context/NotificationContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
