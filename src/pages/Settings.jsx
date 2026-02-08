@@ -1,16 +1,34 @@
-import { useState, useContext } from "react";
-import { User, Bell, Lock, Palette, Save } from "lucide-react";
+import { useState, useContext, useEffect } from "react";
+import { User, Bell, Lock, Palette, Save, Eye, EyeOff, Trash2, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 import DashboardLayout from "../components/DashboardLayout";
 import AuthContext from "../context/AuthContext";
+import axios from "axios";
 
 function Settings() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState("profile");
+  const [loading, setLoading] = useState(false);
+  
+  // Profile state
   const [profileData, setProfileData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
+    name: "",
+    email: "",
   });
+
+  // Password state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+
+  // Notifications state
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     issueAssigned: true,
@@ -19,19 +37,147 @@ function Settings() {
     mentions: true,
   });
 
+  // Theme state
+  const [theme, setTheme] = useState("light");
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || "",
+        email: user.email || "",
+      });
+      if (user.preferences) {
+        setNotifications(user.preferences.notifications || notifications);
+        setTheme(user.preferences.theme || "light");
+      }
+    }
+  }, [user]);
+
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
-    { id: "notifications", label: "Notifications", icon: Bell },
     { id: "security", label: "Security", icon: Lock },
+   
     { id: "appearance", label: "Appearance", icon: Palette },
   ];
 
-  const handleSaveProfile = () => {
-    toast.success("Profile updated successfully!");
+  const getConfig = () => {
+    const token = localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
   };
 
-  const handleSaveNotifications = () => {
-    toast.success("Notification preferences saved!");
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { data } = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        profileData,
+        getConfig()
+      );
+
+      toast.success("Profile updated successfully!");
+      
+      // Update user context with new data
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const updatedUser = { ...currentUser, name: data.name, email: data.email };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      
+      // Force page reload to update context
+      window.location.reload();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await axios.put(
+        "http://localhost:5000/api/users/password",
+        passwordData,
+        getConfig()
+      );
+
+      toast.success("Password changed successfully!");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setLoading(true);
+
+    try {
+      await axios.put(
+        "http://localhost:5000/api/users/preferences",
+        { notifications },
+        getConfig()
+      );
+
+      toast.success("Notification preferences saved!");
+    } catch (error) {
+      toast.error("Failed to save preferences");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+
+    if (!deletePassword) {
+      toast.error("Please enter your password to confirm");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await axios.delete("http://localhost:5000/api/users/account", {
+        ...getConfig(),
+        data: { password: deletePassword },
+      });
+
+      toast.success("Account deleted successfully");
+      logout();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete account");
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+      setDeletePassword("");
+    }
   };
 
   return (
@@ -78,7 +224,7 @@ function Settings() {
                 <h2 className="text-2xl font-bold text-slate-800 mb-6">
                   Profile Settings
                 </h2>
-                <div className="space-y-6">
+                <form onSubmit={handleSaveProfile} className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
                       Full Name
@@ -89,6 +235,7 @@ function Settings() {
                       onChange={(e) =>
                         setProfileData({ ...profileData, name: e.target.value })
                       }
+                      required
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     />
                   </div>
@@ -106,66 +253,22 @@ function Settings() {
                           email: e.target.value,
                         })
                       }
+                      required
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     />
                   </div>
 
-                  <button
-                    onClick={handleSaveProfile}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-                  >
-                    <Save className="w-5 h-5" />
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Notifications Tab */}
-            {activeTab === "notifications" && (
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-6">
-                  Notification Preferences
-                </h2>
-                <div className="space-y-4">
-                  {Object.entries(notifications).map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
                     >
-                      <div>
-                        <p className="font-semibold text-slate-800 capitalize">
-                          {key.replace(/([A-Z])/g, " $1").trim()}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Receive notifications for this event
-                        </p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={value}
-                          onChange={(e) =>
-                            setNotifications({
-                              ...notifications,
-                              [key]: e.target.checked,
-                            })
-                          }
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={handleSaveNotifications}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-                  >
-                    <Save className="w-5 h-5" />
-                    Save Preferences
-                  </button>
-                </div>
+                      <Save className="w-5 h-5" />
+                      {loading ? "Saving..." : "Save Changes"}
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
 
@@ -175,33 +278,155 @@ function Settings() {
                 <h2 className="text-2xl font-bold text-slate-800 mb-6">
                   Security Settings
                 </h2>
-                <div className="space-y-6">
-                  <div className="p-6 bg-slate-50 rounded-xl">
-                    <h3 className="font-bold text-slate-800 mb-2">
-                      Change Password
-                    </h3>
-                    <p className="text-sm text-slate-600 mb-4">
-                      Update your password to keep your account secure
-                    </p>
-                    <button className="text-blue-600 hover:text-blue-700 font-medium">
-                      Change Password →
-                    </button>
-                  </div>
 
-                  <div className="p-6 bg-slate-50 rounded-xl">
-                    <h3 className="font-bold text-slate-800 mb-2">
-                      Two-Factor Authentication
-                    </h3>
-                    <p className="text-sm text-slate-600 mb-4">
-                      Add an extra layer of security to your account
-                    </p>
-                    <button className="text-blue-600 hover:text-blue-700 font-medium">
-                      Enable 2FA →
+                {/* Change Password */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">
+                    Change Password
+                  </h3>
+                  <form onSubmit={handleChangePassword} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Current Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.current ? "text" : "password"}
+                          value={passwordData.currentPassword}
+                          onChange={(e) =>
+                            setPasswordData({
+                              ...passwordData,
+                              currentPassword: e.target.value,
+                            })
+                          }
+                          required
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPasswords({
+                              ...showPasswords,
+                              current: !showPasswords.current,
+                            })
+                          }
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPasswords.current ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.new ? "text" : "password"}
+                          value={passwordData.newPassword}
+                          onChange={(e) =>
+                            setPasswordData({
+                              ...passwordData,
+                              newPassword: e.target.value,
+                            })
+                          }
+                          required
+                          minLength={6}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPasswords({
+                              ...showPasswords,
+                              new: !showPasswords.new,
+                            })
+                          }
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPasswords.new ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPasswords.confirm ? "text" : "password"}
+                          value={passwordData.confirmPassword}
+                          onChange={(e) =>
+                            setPasswordData({
+                              ...passwordData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          required
+                          minLength={6}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowPasswords({
+                              ...showPasswords,
+                              confirm: !showPasswords.confirm,
+                            })
+                          }
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPasswords.confirm ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                    >
+                      <Shield className="w-5 h-5" />
+                      {loading ? "Updating..." : "Update Password"}
                     </button>
-                  </div>
+                  </form>
+                </div>
+
+                {/* Delete Account */}
+                <div className="pt-8 border-t border-slate-200">
+                  <h3 className="text-lg font-bold text-red-600 mb-4">
+                    Delete Account
+                  </h3>
+                  <p className="text-slate-600 mb-4">
+                    Once you delete your account, there is no going back. Please be
+                    certain.
+                  </p>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    Delete Account
+                  </button>
                 </div>
               </div>
             )}
+
+           
             {/* Appearance Tab */}
             {activeTab === "appearance" && (
               <div>
@@ -212,27 +437,106 @@ function Settings() {
                   <div>
                     <h3 className="font-semibold text-slate-800 mb-3">Theme</h3>
                     <div className="grid grid-cols-3 gap-4">
-                      <div className="p-4 border-2 border-blue-500 rounded-xl cursor-pointer bg-white">
+                      <button
+                        onClick={() => setTheme("light")}
+                        className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          theme === "light"
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
                         <div className="w-full h-20 bg-gradient-to-br from-slate-50 to-blue-50 rounded-lg mb-2"></div>
                         <p className="text-sm font-medium text-center">Light</p>
-                      </div>
-                      <div className="p-4 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-slate-300">
+                      </button>
+                      <button
+                        onClick={() => setTheme("dark")}
+                        className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          theme === "dark"
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
                         <div className="w-full h-20 bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg mb-2"></div>
                         <p className="text-sm font-medium text-center">Dark</p>
-                      </div>
-                      <div className="p-4 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-slate-300">
+                      </button>
+                      <button
+                        onClick={() => setTheme("auto")}
+                        className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          theme === "auto"
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
                         <div className="w-full h-20 bg-gradient-to-br from-slate-50 via-slate-800 to-blue-50 rounded-lg mb-2"></div>
                         <p className="text-sm font-medium text-center">Auto</p>
-                      </div>
+                      </button>
                     </div>
                   </div>
+                  <p className="text-sm text-slate-500">
+                    Theme customization coming soon
+                  </p>
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+              Delete Account
+            </h2>
+            <p className="text-slate-600 mb-6">
+              This action cannot be undone. All your data will be permanently
+              deleted.
+            </p>
+
+            <form onSubmit={handleDeleteAccount}>
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Enter your password to confirm
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                  placeholder="Enter password"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletePassword("");
+                  }}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
+                >
+                  {loading ? "Deleting..." : "Delete Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
+
 export default Settings;

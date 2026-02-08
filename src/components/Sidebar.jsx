@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Plus,
   LogOut,
+  Bell
 } from 'lucide-react';
 import AuthContext from '../context/AuthContext';
 import ProjectContext from '../context/ProjectContext';
@@ -30,6 +31,7 @@ function Sidebar() {
     { path: '/projects', icon: FolderKanban, label: 'Projects' },
     { path: '/all-issues', icon: Bug, label: 'All Issues' },
     { path: '/settings', icon: Settings, label: 'Settings' },
+    {path:'/notifications', icon: Bell, label: 'Notification'}
   ];
 
   const isActive = (path) => {
@@ -56,7 +58,7 @@ function Sidebar() {
               <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
                 <Bug className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-slate-800">BugTracker</span>
+              <span className="font-bold text-slate-800">BugPilot</span>
             </Link>
           )}
           <button
