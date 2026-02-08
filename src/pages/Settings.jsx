@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from "react";
-import { User, Bell, Lock, Palette, Save, Eye, EyeOff, Trash2, Shield } from "lucide-react";
+import { User, LogOut, Lock, Palette, Save, Eye, EyeOff, Trash2, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 import DashboardLayout from "../components/DashboardLayout";
 import AuthContext from "../context/AuthContext";
@@ -40,6 +40,10 @@ function Settings() {
   // Theme state
   const [theme, setTheme] = useState("light");
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -182,12 +186,23 @@ function Settings() {
 
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Settings</h1>
-        <p className="text-slate-600">
-          Manage your account settings and preferences
-        </p>
-      </div>
+     <div className="mb-8 flex items-start justify-between">
+  <div>
+    <h1 className="text-3xl font-bold text-slate-800 mb-2">Settings</h1>
+    <p className="text-slate-600">
+      Manage your account settings and preferences
+    </p>
+  </div>
+
+ <button
+    onClick={handleLogout}
+    className="text-slate-600 hover:text-red-500 transition"
+    title="Logout"
+  >
+    <LogOut />
+  </button>
+</div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
