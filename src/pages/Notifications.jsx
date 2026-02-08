@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import NotificationContext from '../context/Notificationcontext';
+import NotificationContext from '../context/NotificationContext';
 
 function Notifications() {
   const {
