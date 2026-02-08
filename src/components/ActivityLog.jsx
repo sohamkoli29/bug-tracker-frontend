@@ -15,7 +15,7 @@ function ActivityLog({ ticketId }) {
       setLoading(true);
       const token = localStorage.getItem('token');
       const { data } = await axios.get(
-        `http://localhost:5000/api/tickets/${ticketId}/activity`,
+        `${import.meta.env.VITE_API_URL}/api/tickets/${ticketId}/activity`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

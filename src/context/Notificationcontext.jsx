@@ -8,7 +8,8 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = 'http://localhost:5000/api/notifications';
+const API_URL = `${import.meta.env.VITE_API_URL}/api/notifications`;
+
 
   // Get config with token
   const getConfig = () => {

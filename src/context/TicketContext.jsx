@@ -1,5 +1,5 @@
-import { createContext, useState, useContext } from 'react';
-import axios from 'axios';
+import { createContext, useState, useContext } from "react";
+import axios from "axios";
 
 const TicketContext = createContext();
 
@@ -9,11 +9,11 @@ export const TicketProvider = ({ children }) => {
   const [ticketStats, setTicketStats] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
   // Get config with token
   const getConfig = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     return {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -27,7 +27,7 @@ export const TicketProvider = ({ children }) => {
       setLoading(true);
       const { data } = await axios.get(
         `${API_URL}/projects/${projectId}/tickets`,
-        getConfig()
+        getConfig(),
       );
       setTickets(data);
       setLoading(false);
@@ -36,7 +36,7 @@ export const TicketProvider = ({ children }) => {
       setLoading(false);
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to fetch tickets',
+        message: error.response?.data?.message || "Failed to fetch tickets",
       };
     }
   };
@@ -53,7 +53,7 @@ export const TicketProvider = ({ children }) => {
       setLoading(false);
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to fetch ticket',
+        message: error.response?.data?.message || "Failed to fetch ticket",
       };
     }
   };
@@ -64,14 +64,14 @@ export const TicketProvider = ({ children }) => {
       const { data } = await axios.post(
         `${API_URL}/projects/${projectId}/tickets`,
         ticketData,
-        getConfig()
+        getConfig(),
       );
       setTickets([data, ...tickets]);
       return { success: true, data };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to create ticket',
+        message: error.response?.data?.message || "Failed to create ticket",
       };
     }
   };
@@ -82,7 +82,7 @@ export const TicketProvider = ({ children }) => {
       const { data } = await axios.put(
         `${API_URL}/tickets/${id}`,
         ticketData,
-        getConfig()
+        getConfig(),
       );
       setTickets(tickets.map((t) => (t._id === id ? data : t)));
       if (currentTicket?._id === id) {
@@ -92,7 +92,7 @@ export const TicketProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to update ticket',
+        message: error.response?.data?.message || "Failed to update ticket",
       };
     }
   };
@@ -109,7 +109,7 @@ export const TicketProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to delete ticket',
+        message: error.response?.data?.message || "Failed to delete ticket",
       };
     }
   };
@@ -119,14 +119,14 @@ export const TicketProvider = ({ children }) => {
     try {
       const { data } = await axios.get(
         `${API_URL}/projects/${projectId}/tickets/stats`,
-        getConfig()
+        getConfig(),
       );
       setTicketStats(data);
       return { success: true, data };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to fetch stats',
+        message: error.response?.data?.message || "Failed to fetch stats",
       };
     }
   };

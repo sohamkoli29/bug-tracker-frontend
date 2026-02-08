@@ -41,7 +41,7 @@ function AllIssues() {
       
       // Fetch tickets from all projects
       const ticketPromises = projects.map((project) =>
-        axios.get(`http://localhost:5000/api/projects/${project._id}/tickets`, {
+        axios.get(  `${import.meta.env.VITE_API_URL}/api/projects/${project._id}/tickets`, {
           headers: { Authorization: `Bearer ${token}` },
         })
       );

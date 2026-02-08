@@ -83,7 +83,7 @@ function Settings() {
 
     try {
       const { data } = await axios.put(
-        "http://localhost:5000/api/users/profile",
+        `${import.meta.env.VITE_API_URL}/api/users/profile`,
         profileData,
         getConfig()
       );
@@ -121,7 +121,7 @@ function Settings() {
 
     try {
       await axios.put(
-        "http://localhost:5000/api/users/password",
+        `${import.meta.env.VITE_API_URL}/api/users/password`,
         passwordData,
         getConfig()
       );
@@ -143,8 +143,8 @@ function Settings() {
     setLoading(true);
 
     try {
-      await axios.put(
-        "http://localhost:5000/api/users/preferences",
+        await axios.put(
+          `${import.meta.env.VITE_API_URL}/api/users/preferences`,
         { notifications },
         getConfig()
       );
@@ -168,7 +168,7 @@ function Settings() {
     setLoading(true);
 
     try {
-      await axios.delete("http://localhost:5000/api/users/account", {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/account`, {
         ...getConfig(),
         data: { password: deletePassword },
       });
